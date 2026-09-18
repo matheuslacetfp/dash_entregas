@@ -107,6 +107,9 @@ body { background: #13091f; color: var(--ink); background-image: radial-gradient
 	footer { align-items: flex-start; }
 }
 .analysis-status-item:hover { background: rgba(255, 255, 255, .07); transform: translateY(-1px); }
+.button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.button > span { margin-right: 0; }
+.button > .spin { width: 15px; height: 15px; flex: 0 0 15px; display: inline-block; box-sizing: border-box; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; font-size: 0; line-height: 0; vertical-align: middle; transform-origin: 50% 50%; transform-box: border-box; }
 .analysis-status-tag { min-width: 100px; justify-content: center; }
 .analysis-status-tag select { max-width: 100px; font-weight: 700; }
 .option-color-preview { align-self: center; width: 9px; height: 9px; border-radius: 50%; }
