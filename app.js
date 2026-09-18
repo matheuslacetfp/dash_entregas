@@ -398,7 +398,7 @@ function App() {
       if (!active) return;
       const firstError = deliveriesResult.error || videosResult.error || historyResult.error;
       if (firstError) {
-        setNotice({ type: "error", text: `Supabase: ${firstError.message}` });
+        setNotice({ type: "info", text: "Supabase indisponível. Dados locais mantidos; tentando reconectar..." });
         return;
       }
       setDeliveries((deliveriesResult.data || []).map(mapRemoteDelivery));
@@ -408,6 +408,8 @@ function App() {
     }
 
     loadRemoteData();
+    const retryTimer = window.setInterval(loadRemoteData, 15000);
+    window.addEventListener("online", loadRemoteData);
     let refreshTimer;
     const refreshRemoteSoon = () => {
       window.clearTimeout(refreshTimer);
@@ -419,11 +421,13 @@ function App() {
       .on("postgres_changes", { event: "*", schema: "public", table: "video_history" }, refreshRemoteSoon)
       .subscribe((status) => {
         if (status === "SUBSCRIBED") setNotice({ type: "success", text: "Realtime conectado: dados atualizados automaticamente" });
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") setNotice({ type: "error", text: `Realtime indisponível: ${status}` });
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") setNotice({ type: "info", text: "Realtime indisponível. Tentando reconectar..." });
       });
     return () => {
       active = false;
       window.clearTimeout(refreshTimer);
+      window.clearInterval(retryTimer);
+      window.removeEventListener("online", loadRemoteData);
       supabaseClient.removeChannel(channel);
     };
   }, []);
