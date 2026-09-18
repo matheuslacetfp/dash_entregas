@@ -2,6 +2,7 @@
 
 :root { --ink: #1d2633; --muted: #7d8795; --line: #e7e9ee; --paper: #f7f8fa; --teal: #277e70; --navy: #20394c; --orange: #d58a3d; --red: #c85a55; }
 * { box-sizing: border-box; }
+html, body { max-width: 100%; overflow-x: hidden; }
 body { margin: 0; background: var(--paper); color: var(--ink); font: 14px 'DM Sans', sans-serif; }
 button, input, select { font: inherit; }
 button { cursor: pointer; }
@@ -63,6 +64,48 @@ body { background: #13091f; color: var(--ink); background-image: radial-gradient
 .analysis-status-heading h3 { font-size: 16px; }
 .analysis-status-list { margin-top: 15px; }
 .analysis-status-item { min-height: 58px; transition: border-color .2s ease, background .2s ease, transform .2s ease; }
+
+/* Responsive layout for the focused matrix view. */
+.main-content { width: min(100%, 1320px); }
+.content-analysis-heading { gap: 20px; }
+.analysis-actions { flex-wrap: wrap; justify-content: flex-end; }
+.analysis-table-wrap { width: 100%; max-width: 100%; overscroll-behavior-inline: contain; }
+@media (max-width: 900px) {
+	.main-content { padding-left: 18px; padding-right: 18px; }
+	.content-analysis-heading { align-items: flex-start; flex-direction: column; }
+	.analysis-actions { width: 100%; justify-content: flex-start; }
+	.analysis-status-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+	.main-content { padding-left: 12px; padding-right: 12px; }
+	.topbar { height: 62px; }
+	.breadcrumb { max-width: 58%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.top-actions { gap: 7px; }
+	.page-heading { padding: 30px 0 22px; }
+	.page-heading h1 { font-size: clamp(28px, 9vw, 42px); letter-spacing: -1px; }
+	.subtitle { font-size: 13px; }
+	.heading-actions { width: 100%; flex-wrap: wrap; }
+	.heading-actions .button { flex: 1 1 140px; }
+	.content-analysis { margin-bottom: 12px; }
+	.content-analysis-heading, .options-manager { padding-left: 14px; padding-right: 14px; }
+	.analysis-actions { gap: 6px; }
+	.analysis-actions button, .analysis-count { font-size: 9px; }
+	.analysis-table-wrap { border-radius: 10px; scrollbar-width: thin; }
+	.analysis-table { min-width: 900px; }
+	.analysis-status-grid, .analysis-history { margin-left: 12px; margin-right: 12px; padding: 14px; }
+	.analysis-status-heading { align-items: flex-start; flex-direction: column; }
+	.analysis-status-heading .analysis-manage { align-self: flex-start; }
+	.analysis-status-list { grid-template-columns: 1fr; }
+	.analysis-status-item { min-height: 54px; }
+	.analysis-status-tag { min-width: 94px; }
+	.option-create-form { display: grid; grid-template-columns: 1fr; }
+	.option-create-form select, .option-create-form input { width: 100%; min-width: 0; }
+	.option-score-preview, .option-color-preview { justify-self: start; }
+	.analysis-item-form { grid-template-columns: 1fr; padding-left: 14px; padding-right: 14px; }
+	.analysis-item-form .analysis-save, .analysis-item-form .analysis-cancel { grid-column: auto; }
+	.history-item { min-width: 0; width: 100%; }
+	footer { align-items: flex-start; }
+}
 .analysis-status-item:hover { background: rgba(255, 255, 255, .07); transform: translateY(-1px); }
 .analysis-status-tag { min-width: 100px; justify-content: center; }
 .analysis-status-tag select { max-width: 100px; font-weight: 700; }
