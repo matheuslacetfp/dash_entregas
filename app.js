@@ -188,25 +188,19 @@ function ContentAnalysis({ analyses, history, onChange, onAdd, onDelete, onEdit,
       }
     }
     loadCatalogs();
-    const channel = supabaseClient.channel("catalog-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "validation_options" }, (payload) => {
-        const row = payload.eventType === "DELETE" ? payload.old : payload.new;
-        setValidationOptions((current) => Object.fromEntries(ANALYSIS_COLUMNS.map((column) => [column.key, payload.eventType === "DELETE" ? (current[column.key] || []).filter((option) => !(column.key === row.stage && option === row.label)) : column.key === row.stage && payload.eventType === "INSERT" && !(current[column.key] || []).includes(row.label) ? [...(current[column.key] || []), row.label] : current[column.key] || []])));
-        if (payload.eventType !== "DELETE") setOptionSettings((current) => ({ ...current, [`${row.stage}:${row.label}`]: { color: row.color, score: row.score } }));
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "video_statuses" }, (payload) => {
-        const row = payload.eventType === "DELETE" ? payload.old : payload.new;
-        if (payload.eventType === "DELETE") {
-          setStatusOptions((current) => current.filter((status) => status !== row.name));
-          setStatusColors((current) => { const next = { ...current }; delete next[row.name]; return next; });
-        } else {
-          setStatusOptions((current) => payload.eventType === "UPDATE" ? current.map((status) => status === payload.old.name ? row.name : status) : current.includes(row.name) ? current : [...current, row.name]);
-          if (payload.eventType === "UPDATE") setStatusColors((current) => { const next = { ...current, [row.name]: row.color }; delete next[payload.old.name]; return next; });
-          setStatusColors((current) => ({ ...current, [row.name]: row.color }));
-        }
-      })
-      .subscribe();
-    return () => { active = false; supabaseClient.removeChannel(channel); };
+    let refreshTimer;
+    const refreshCatalogsSoon = () => {
+      window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(loadCatalogs, 80);
+    };
+    const channel = supabaseClient.channel(`catalog-realtime-${Date.now()}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "validation_options" }, refreshCatalogsSoon)
+      .on("postgres_changes", { event: "*", schema: "public", table: "video_statuses" }, refreshCatalogsSoon)
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") console.info("Supabase realtime: catálogos conectados");
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") console.error(`Supabase realtime catálogo: ${status}`);
+      });
+    return () => { active = false; window.clearTimeout(refreshTimer); supabaseClient.removeChannel(channel); };
   }, []);
 
   function getOptionSettings(columnKey, option) {
@@ -414,29 +408,22 @@ function App() {
     }
 
     loadRemoteData();
-    const channel = supabaseClient.channel("dashboard-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "deliveries" }, (payload) => {
-        setDeliveries((current) => {
-          if (payload.eventType === "DELETE") return current.filter((item) => item.id !== payload.old.id);
-          const next = mapRemoteDelivery(payload.new);
-          return current.some((item) => item.id === next.id) ? current.map((item) => item.id === next.id ? next : item) : [next, ...current];
-        });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "content_videos" }, (payload) => {
-        setAnalyses((current) => {
-          if (payload.eventType === "DELETE") return current.filter((item) => item.id !== payload.old.id);
-          const next = mapRemoteVideo(payload.new);
-          return current.some((item) => item.id === next.id) ? current.map((item) => item.id === next.id ? next : item) : [...current, next];
-        });
-      })
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "video_history" }, (payload) => {
-        setAnalysisHistory((current) => current.some((item) => item.id === payload.new.id) ? current : [mapRemoteHistory(payload.new), ...current]);
-      })
+    let refreshTimer;
+    const refreshRemoteSoon = () => {
+      window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(loadRemoteData, 100);
+    };
+    const channel = supabaseClient.channel(`dashboard-realtime-${Date.now()}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "deliveries" }, refreshRemoteSoon)
+      .on("postgres_changes", { event: "*", schema: "public", table: "content_videos" }, refreshRemoteSoon)
+      .on("postgres_changes", { event: "*", schema: "public", table: "video_history" }, refreshRemoteSoon)
       .subscribe((status) => {
-        if (status === "CHANNEL_ERROR") setNotice({ type: "error", text: "Não foi possível conectar ao realtime do Supabase" });
+        if (status === "SUBSCRIBED") setNotice({ type: "success", text: "Realtime conectado: dados atualizados automaticamente" });
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") setNotice({ type: "error", text: `Realtime indisponível: ${status}` });
       });
     return () => {
       active = false;
+      window.clearTimeout(refreshTimer);
       supabaseClient.removeChannel(channel);
     };
   }, []);
